@@ -1,0 +1,85 @@
+Crie um sistema SaaS multiempresa para gestão de bares usando Node.js no backend e React puro (sem Next.js) no frontend.
+
+Requisitos principais:
+
+Arquitetura SaaS multi-tenant, onde várias empresas podem se cadastrar e usar o sistema de forma isolada.
+
+O sistema deve ter os seguintes módulos:
+
+Empresas: cadastro, edição, exclusão e listagem de empresas. Cada empresa terá um login para acessar o sistema.
+
+Vendas: registro de vendas, histórico, emissão de comprovantes e integração com estoque (reduzir automaticamente os produtos vendidos).
+
+Compras: registro de compras de produtos, integração com estoque (aumentar automaticamente).
+
+Estoque: cadastro de produtos, controle de quantidades, alertas de estoque baixo.
+
+Financeiro: controle de contas a pagar e a receber, fluxo de caixa e relatórios.
+
+Banco de Dados:
+
+Use PostgreSQL hospedado no Neon, conexão via URL:
+
+perl
+Copiar
+Editar
+postgresql://neondb_owner:npg_9EVxCtIRm3uQ@ep-tiny-sun-ac8aoxy4-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+Configurar migrations para criar automaticamente as tabelas necessárias na primeira execução.
+
+Organizar as tabelas de forma que cada registro pertença a uma empresa (multi-tenant).
+
+Backend (Node.js):
+
+Criar uma API REST com autenticação JWT (login e registro).
+
+Seguir boas práticas de organização (separar rotas, controllers, services e models).
+
+Implementar CORS corretamente para permitir acesso do frontend.
+
+Configuração para rodar em produção em um servidor Contabo (não usar recursos proprietários do Replit).
+
+Adicionar scripts no package.json:
+
+"dev" para desenvolvimento
+
+"build" para compilar
+
+"start" para rodar em produção
+
+Documentar as rotas no README.
+
+Frontend (React puro + Vite):
+
+Criar páginas para login e registro de empresas.
+
+Criar dashboard para cada módulo (Vendas, Compras, Estoque, Financeiro).
+
+Utilizar React Router para navegação entre páginas.
+
+Criar componentes reutilizáveis (inputs, botões, tabelas, modais).
+
+Conectar com a API usando fetch ou axios.
+
+Layout responsivo usando Bootstrap 5.
+
+Deploy:
+
+Backend e frontend devem poder ser hospedados separadamente em um servidor VPS da Contabo.
+
+Evitar dependências que exijam ambiente específico do Replit.
+
+Gerar build do frontend com vite build e servir via Nginx ou similar.
+
+O backend será executado com Node.js em produção.
+
+Configurar variáveis de ambiente para credenciais do banco e JWT secret.
+
+Extras:
+
+Código bem comentado para facilitar manutenção.
+
+Estrutura de pastas organizada.
+
+Seguir padrão MVC no backend.
+
+Usar ESLint e Prettier para padronizar o código.
