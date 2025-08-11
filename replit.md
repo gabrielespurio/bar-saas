@@ -5,6 +5,7 @@ BarManager is a multi-tenant SaaS application designed for bar management. The s
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+User language: Portuguese (Brazilian)
 
 ## System Architecture
 
