@@ -31,7 +31,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = loginSchema.parse(req.body);
-      
       // First, check if it's a company login
       const company = await storage.getCompanyByEmail(email);
       if (company) {
