@@ -151,9 +151,17 @@ export default function SystemCompanies() {
   const { data: companies = [], isLoading, error } = useQuery({
     queryKey: ['/api/system/companies'],
     queryFn: async () => {
-      const response = await api.get('/api/system/companies');
-      console.log('Companies API response:', response.data);
-      return Array.isArray(response.data) ? response.data : [];
+      try {
+        console.log('Fetching companies...');
+        const response = await api.get('/api/system/companies');
+        console.log('Companies API response:', response.data);
+        const companiesData = Array.isArray(response.data) ? response.data : [];
+        console.log('Processed companies data:', companiesData);
+        return companiesData;
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+        throw error;
+      }
     },
   });
 
