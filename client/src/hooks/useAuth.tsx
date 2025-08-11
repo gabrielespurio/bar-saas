@@ -42,9 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log("Attempting login with:", { email, password: "***" });
+      console.log("Frontend: Attempting login with:", { email, password: "***" });
+      console.log("Frontend: API base URL:", api.defaults.baseURL);
+      
       const response = await api.post("/auth/login", { email, password });
-      console.log("Login response:", response.data);
+      console.log("Frontend: Login response:", response.data);
+      console.log("Frontend: Login response status:", response.status);
       
       const { token: newToken, company: newCompany } = response.data;
 
@@ -55,9 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("company", JSON.stringify(newCompany));
       
       api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      
+      console.log("Frontend: Login successful, token and company set");
     } catch (error: any) {
-      console.error("Login error:", error);
-      console.error("Error response:", error.response?.data);
+      console.error("Frontend: Login error:", error);
+      console.error("Frontend: Error response:", error.response?.data);
+      console.error("Frontend: Error response status:", error.response?.status);
+      console.error("Frontend: Full error:", error);
       throw new Error(error.response?.data?.message || "Erro ao fazer login");
     }
   };
