@@ -7,10 +7,11 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
+import CompanyDashboard from "@/pages/company-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, company } = useAuth();
 
   if (isLoading) {
     return (
@@ -35,9 +36,18 @@ function Router() {
         </>
       ) : (
         <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/dashboard/:module" component={Dashboard} />
+          {company?.userType === 'system_admin' ? (
+            <>
+              <Route path="/" component={Dashboard} />
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/dashboard/:module" component={Dashboard} />
+            </>
+          ) : (
+            <>
+              <Route path="/" component={CompanyDashboard} />
+              <Route path="/company-dashboard" component={CompanyDashboard} />
+            </>
+          )}
         </>
       )}
       <Route component={NotFound} />
