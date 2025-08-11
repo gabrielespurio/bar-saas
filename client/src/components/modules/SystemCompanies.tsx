@@ -16,7 +16,9 @@ const createCompanySchema = z.object({
   cnpj: z.string().min(14, "CNPJ deve ter pelo menos 14 caracteres"),
   email: z.string().email("Email inválido"),
   phone: z.string().min(1, "Telefone é obrigatório"),
+  cep: z.string().min(8, "CEP é obrigatório"),
   address: z.string().min(1, "Endereço é obrigatório"),
+  neighborhood: z.string().min(1, "Bairro é obrigatório"),
   city: z.string().min(1, "Cidade é obrigatória"),
   state: z.string().min(1, "Estado é obrigatório"),
   website: z.string().optional(),
@@ -48,7 +50,9 @@ export default function SystemCompanies() {
       cnpj: "",
       email: "",
       phone: "",
+      cep: "",
       address: "",
+      neighborhood: "",
       city: "",
       state: "",
       website: "",
@@ -83,6 +87,52 @@ export default function SystemCompanies() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const maskedValue = applyPhoneMask(e.target.value);
     form.setValue('phone', maskedValue);
+  };
+
+  const applyCepMask = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/^(\d{5})(\d)/, '$1-$2')
+      .substring(0, 9);
+  };
+
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = applyCepMask(e.target.value);
+    form.setValue('cep', maskedValue);
+
+    // Auto-fill address when CEP is complete (8 digits)
+    const cleanCep = maskedValue.replace(/\D/g, '');
+    if (cleanCep.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await response.json();
+        
+        if (!data.erro) {
+          form.setValue('address', data.logradouro || '');
+          form.setValue('neighborhood', data.bairro || '');
+          form.setValue('city', data.localidade || '');
+          form.setValue('state', data.uf || '');
+          
+          toast({
+            title: "CEP encontrado",
+            description: "Endereço preenchido automaticamente",
+          });
+        } else {
+          toast({
+            title: "CEP não encontrado",
+            description: "Verifique o CEP digitado",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+        toast({
+          title: "Erro ao buscar CEP",
+          description: "Verifique sua conexão com a internet",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const { data: companies = [], isLoading, error } = useQuery({
@@ -346,20 +396,63 @@ export default function SystemCompanies() {
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="cep" className="text-sm font-medium text-gray-700">
+                      CEP *
+                    </Label>
+                    <Input
+                      id="cep"
+                      data-testid="input-new-company-cep"
+                      value={form.watch("cep")}
+                      onChange={handleCepChange}
+                      placeholder="00000-000"
+                      maxLength={9}
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.cep && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.cep.message}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Digite o CEP para preenchimento automático
+                    </p>
+                  </div>
+
                   <div className="md:col-span-2">
                     <Label htmlFor="address" className="text-sm font-medium text-gray-700">
-                      Endereço *
+                      Logradouro *
                     </Label>
                     <Input
                       id="address"
                       data-testid="input-new-company-address"
-                      {...form.register("address")}
-                      placeholder="Rua das Flores, 123 - Centro"
+                      value={form.watch("address")}
+                      onChange={(e) => form.setValue("address", e.target.value)}
+                      placeholder="Rua das Flores, 123"
                       className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
                     {form.formState.errors.address && (
                       <p className="text-red-500 text-sm mt-1">
                         {form.formState.errors.address.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="neighborhood" className="text-sm font-medium text-gray-700">
+                      Bairro *
+                    </Label>
+                    <Input
+                      id="neighborhood"
+                      data-testid="input-new-company-neighborhood"
+                      value={form.watch("neighborhood")}
+                      onChange={(e) => form.setValue("neighborhood", e.target.value)}
+                      placeholder="Centro"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.neighborhood && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.neighborhood.message}
                       </p>
                     )}
                   </div>
@@ -371,7 +464,8 @@ export default function SystemCompanies() {
                     <Input
                       id="city"
                       data-testid="input-new-company-city"
-                      {...form.register("city")}
+                      value={form.watch("city")}
+                      onChange={(e) => form.setValue("city", e.target.value)}
                       placeholder="São Paulo"
                       className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
@@ -386,23 +480,15 @@ export default function SystemCompanies() {
                     <Label htmlFor="state" className="text-sm font-medium text-gray-700">
                       Estado *
                     </Label>
-                    <select
+                    <Input
                       id="state"
-                      {...form.register("state")}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-blue-500"
-                    >
-                      <option value="">Selecione</option>
-                      <option value="SP">São Paulo</option>
-                      <option value="RJ">Rio de Janeiro</option>
-                      <option value="MG">Minas Gerais</option>
-                      <option value="RS">Rio Grande do Sul</option>
-                      <option value="PR">Paraná</option>
-                      <option value="SC">Santa Catarina</option>
-                      <option value="BA">Bahia</option>
-                      <option value="GO">Goiás</option>
-                      <option value="PE">Pernambuco</option>
-                      <option value="CE">Ceará</option>
-                    </select>
+                      data-testid="input-new-company-state"
+                      value={form.watch("state")}
+                      onChange={(e) => form.setValue("state", e.target.value.toUpperCase())}
+                      placeholder="SP"
+                      maxLength={2}
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
                     {form.formState.errors.state && (
                       <p className="text-red-500 text-sm mt-1">
                         {form.formState.errors.state.message}
