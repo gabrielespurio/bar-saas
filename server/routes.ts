@@ -203,7 +203,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: z.string().min(1),
         cnpj: z.string().min(14),
         email: z.string().email(),
-        phone: z.string().optional(),
+        phone: z.string().min(1),
+        address: z.string().min(1),
+        city: z.string().min(1),
+        state: z.string().min(1),
+        website: z.string().optional(),
+        businessType: z.string().min(1),
       }).parse(req.body);
 
       // Create company without password - admin users will be created separately
@@ -221,6 +226,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: company.email,
         cnpj: company.cnpj,
         phone: company.phone,
+        address: company.address,
+        city: company.city,
+        state: company.state,
+        website: company.website,
+        businessType: company.businessType,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

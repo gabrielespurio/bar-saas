@@ -12,10 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 
 const createCompanySchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
+  name: z.string().min(1, "Nome da empresa é obrigatório"),
   cnpj: z.string().min(14, "CNPJ deve ter pelo menos 14 caracteres"),
   email: z.string().email("Email inválido"),
-  phone: z.string().optional(),
+  phone: z.string().min(1, "Telefone é obrigatório"),
+  address: z.string().min(1, "Endereço é obrigatório"),
+  city: z.string().min(1, "Cidade é obrigatória"),
+  state: z.string().min(1, "Estado é obrigatório"),
+  website: z.string().optional(),
+  businessType: z.string().min(1, "Tipo de negócio é obrigatório"),
 });
 
 type CreateCompanyData = z.infer<typeof createCompanySchema>;
@@ -43,6 +48,11 @@ export default function SystemCompanies() {
       cnpj: "",
       email: "",
       phone: "",
+      address: "",
+      city: "",
+      state: "",
+      website: "",
+      businessType: "",
     },
   });
 
@@ -177,89 +187,252 @@ export default function SystemCompanies() {
               Nova Empresa
             </Button>
           </DialogTrigger>
-          <DialogContent className="modal-dialog">
-            <DialogHeader>
-              <DialogTitle>Cadastrar Nova Empresa</DialogTitle>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+            <DialogHeader className="border-b pb-4 mb-6">
+              <DialogTitle className="text-2xl font-semibold text-gray-800">
+                Cadastro de Nova Empresa
+              </DialogTitle>
+              <p className="text-gray-600 mt-2">
+                Preencha os dados da empresa para registrar no sistema. Todos os campos marcados com * são obrigatórios.
+              </p>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <Label htmlFor="name">Nome da Empresa</Label>
-                  <Input
-                    id="name"
-                    data-testid="input-new-company-name"
-                    {...form.register("name")}
-                    placeholder="Nome da empresa"
-                  />
-                  {form.formState.errors.name && (
-                    <small className="text-danger">
-                      {form.formState.errors.name.message}
-                    </small>
-                  )}
-                </div>
+            
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Informações Básicas */}
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                  <i className="fas fa-building text-blue-600 mr-2"></i>
+                  Informações da Empresa
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                      Nome da Empresa *
+                    </Label>
+                    <Input
+                      id="name"
+                      data-testid="input-new-company-name"
+                      {...form.register("name")}
+                      placeholder="Ex: Bar e Restaurante Sabor Local"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.name && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.name.message}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="col-md-6 mb-3">
-                  <Label htmlFor="cnpj">CNPJ</Label>
-                  <Input
-                    id="cnpj"
-                    data-testid="input-new-company-cnpj"
-                    value={form.watch("cnpj")}
-                    onChange={handleCnpjChange}
-                    placeholder="00.000.000/0000-00"
-                    maxLength={18}
-                  />
-                  {form.formState.errors.cnpj && (
-                    <small className="text-danger">
-                      {form.formState.errors.cnpj.message}
-                    </small>
-                  )}
+                  <div>
+                    <Label htmlFor="cnpj" className="text-sm font-medium text-gray-700">
+                      CNPJ *
+                    </Label>
+                    <Input
+                      id="cnpj"
+                      data-testid="input-new-company-cnpj"
+                      value={form.watch("cnpj")}
+                      onChange={handleCnpjChange}
+                      placeholder="00.000.000/0000-00"
+                      maxLength={18}
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.cnpj && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.cnpj.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="businessType" className="text-sm font-medium text-gray-700">
+                      Tipo de Negócio *
+                    </Label>
+                    <select
+                      id="businessType"
+                      {...form.register("businessType")}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      <option value="">Selecione o tipo</option>
+                      <option value="bar">Bar</option>
+                      <option value="restaurante">Restaurante</option>
+                      <option value="lanchonete">Lanchonete</option>
+                      <option value="pub">Pub</option>
+                      <option value="boteco">Boteco</option>
+                      <option value="casa_noturna">Casa Noturna</option>
+                      <option value="choperia">Choperia</option>
+                    </select>
+                    {form.formState.errors.businessType && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.businessType.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    data-testid="input-new-company-email"
-                    {...form.register("email")}
-                    placeholder="empresa@exemplo.com"
-                    className={form.formState.errors.email ? "border-danger" : ""}
-                  />
-                  {form.formState.errors.email && (
-                    <small className="text-danger">
-                      {form.formState.errors.email.message}
-                    </small>
-                  )}
-                </div>
+              {/* Contato */}
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                  <i className="fas fa-phone text-green-600 mr-2"></i>
+                  Informações de Contato
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                      Email *
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      data-testid="input-new-company-email"
+                      {...form.register("email")}
+                      placeholder="contato@empresa.com"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.email && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="col-md-6 mb-3">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    data-testid="input-new-company-phone"
-                    value={form.watch("phone")}
-                    onChange={handlePhoneChange}
-                    placeholder="(11) 99999-9999"
-                    maxLength={15}
-                  />
-                  {form.formState.errors.phone && (
-                    <small className="text-danger">
-                      {form.formState.errors.phone.message}
-                    </small>
-                  )}
+                  <div>
+                    <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                      Telefone *
+                    </Label>
+                    <Input
+                      id="phone"
+                      data-testid="input-new-company-phone"
+                      value={form.watch("phone")}
+                      onChange={handlePhoneChange}
+                      placeholder="(11) 99999-9999"
+                      maxLength={15}
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.phone && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.phone.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label htmlFor="website" className="text-sm font-medium text-gray-700">
+                      Website
+                    </Label>
+                    <Input
+                      id="website"
+                      data-testid="input-new-company-website"
+                      {...form.register("website")}
+                      placeholder="https://www.empresa.com"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.website && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.website.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* Endereço */}
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                  <i className="fas fa-map-marker-alt text-red-600 mr-2"></i>
+                  Endereço
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                      Endereço *
+                    </Label>
+                    <Input
+                      id="address"
+                      data-testid="input-new-company-address"
+                      {...form.register("address")}
+                      placeholder="Rua das Flores, 123 - Centro"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.address && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.address.message}
+                      </p>
+                    )}
+                  </div>
 
+                  <div>
+                    <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+                      Cidade *
+                    </Label>
+                    <Input
+                      id="city"
+                      data-testid="input-new-company-city"
+                      {...form.register("city")}
+                      placeholder="São Paulo"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.city && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.city.message}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="d-flex justify-content-end gap-2">
+                  <div>
+                    <Label htmlFor="state" className="text-sm font-medium text-gray-700">
+                      Estado *
+                    </Label>
+                    <select
+                      id="state"
+                      {...form.register("state")}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      <option value="">Selecione</option>
+                      <option value="SP">São Paulo</option>
+                      <option value="RJ">Rio de Janeiro</option>
+                      <option value="MG">Minas Gerais</option>
+                      <option value="RS">Rio Grande do Sul</option>
+                      <option value="PR">Paraná</option>
+                      <option value="SC">Santa Catarina</option>
+                      <option value="BA">Bahia</option>
+                      <option value="GO">Goiás</option>
+                      <option value="PE">Pernambuco</option>
+                      <option value="CE">Ceará</option>
+                    </select>
+                    {form.formState.errors.state && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.state.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Informativo */}
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <div className="flex items-start">
+                  <i className="fas fa-info-circle text-blue-600 mt-1 mr-3"></i>
+                  <div>
+                    <p className="text-blue-800 text-sm">
+                      <strong>Informação importante:</strong> Após criar a empresa, um usuário administrador deverá ser criado 
+                      separadamente na aba "Gerenciar Usuários" para permitir o acesso ao sistema.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
                   data-testid="button-cancel-new-company"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   Cancelar
                 </Button>
@@ -267,15 +440,18 @@ export default function SystemCompanies() {
                   type="submit"
                   data-testid="button-save-new-company"
                   disabled={createCompanyMutation.isPending}
-                  className="btn btn-primary"
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium"
                 >
                   {createCompanyMutation.isPending ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
                       Criando...
                     </>
                   ) : (
-                    "Criar Empresa"
+                    <>
+                      <i className="fas fa-check mr-2"></i>
+                      Criar Empresa
+                    </>
                   )}
                 </Button>
               </div>
