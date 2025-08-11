@@ -40,7 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log("Attempting login with:", { email, password: "***" });
       const response = await api.post("/auth/login", { email, password });
+      console.log("Login response:", response.data);
+      
       const { token: newToken, company: newCompany } = response.data;
 
       setToken(newToken);
@@ -51,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
     } catch (error: any) {
+      console.error("Login error:", error);
+      console.error("Error response:", error.response?.data);
       throw new Error(error.response?.data?.message || "Erro ao fazer login");
     }
   };
