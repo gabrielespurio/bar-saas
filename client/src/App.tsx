@@ -12,6 +12,8 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   const { isAuthenticated, isLoading, company } = useAuth();
+  
+  console.log("Router state:", { isAuthenticated, isLoading, company });
 
   if (isLoading) {
     return (
