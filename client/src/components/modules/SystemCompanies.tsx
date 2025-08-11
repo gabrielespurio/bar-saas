@@ -48,11 +48,12 @@ export default function SystemCompanies() {
     },
   });
 
-  const { data: companies = [], isLoading } = useQuery({
+  const { data: companies = [], isLoading, error } = useQuery({
     queryKey: ['/api/system/companies'],
     queryFn: async () => {
       const response = await api.get('/api/system/companies');
-      return response.data;
+      console.log('Companies API response:', response.data);
+      return Array.isArray(response.data) ? response.data : [];
     },
   });
 
@@ -119,6 +120,21 @@ export default function SystemCompanies() {
       </div>
     );
   }
+
+  if (error) {
+    console.error('Error loading companies:', error);
+    return (
+      <div className="p-6">
+        <div className="alert alert-danger">
+          <h4>Erro ao carregar empresas</h4>
+          <p>Houve um problema ao carregar a lista de empresas. Verifique os logs do console.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure companies is always an array
+  const companiesList = Array.isArray(companies) ? companies : [];
 
   return (
     <div className="p-6">
@@ -252,7 +268,7 @@ export default function SystemCompanies() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Empresas ({companies.length})</CardTitle>
+          <CardTitle>Lista de Empresas ({companiesList.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="table-responsive">
@@ -269,7 +285,7 @@ export default function SystemCompanies() {
                 </tr>
               </thead>
               <tbody>
-                {companies.length === 0 ? (
+                {companiesList.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-4">
                       <i className="fas fa-building fa-3x text-muted mb-3"></i>
@@ -278,7 +294,7 @@ export default function SystemCompanies() {
                     </td>
                   </tr>
                 ) : (
-                  companies.map((company: Company) => (
+                  companiesList.map((company: Company) => (
                     <tr key={company.id} data-testid={`company-row-${company.id}`}>
                       <td data-testid={`company-name-${company.id}`}>
                         <div>
