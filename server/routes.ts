@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const token = jwt.sign(
-        { companyId: company.id, email: company.email },
+        { companyId: company.id, email: company.email, userType: company.userType },
         JWT_SECRET,
         { expiresIn: "24h" }
       );
@@ -55,6 +55,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: company.name,
           email: company.email,
           cnpj: company.cnpj,
+          userType: company.userType,
+          active: company.active,
         },
       });
     } catch (error) {
@@ -88,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const token = jwt.sign(
-        { companyId: company.id, email: company.email },
+        { companyId: company.id, email: company.email, userType: company.userType },
         JWT_SECRET,
         { expiresIn: "24h" }
       );
@@ -100,6 +102,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: company.name,
           email: company.email,
           cnpj: company.cnpj,
+          userType: company.userType,
+          active: company.active,
         },
       });
     } catch (error) {
@@ -123,6 +127,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: company.name,
         email: company.email,
         cnpj: company.cnpj,
+        userType: company.userType,
+        active: company.active,
       });
     } catch (error) {
       console.error("Get me error:", error);
@@ -159,6 +165,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
       console.error("Update company error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // System admin routes for managing all companies
+  const requireSystemAdmin = (req: any, res: any, next: any) => {
+    if (req.user.userType !== 'system_admin') {
+      return res.status(403).json({ message: "Acesso negado. Apenas super administradores podem acessar esta funcionalidade." });
+    }
+    next();
+  };
+
+  app.get("/api/system/companies", authenticateToken, requireSystemAdmin, async (req: any, res) => {
+    try {
+      const companies = await storage.getAllCompanies();
+      const companiesWithoutPasswords = companies.map(company => ({
+        id: company.id,
+        name: company.name,
+        cnpj: company.cnpj,
+        email: company.email,
+        phone: company.phone,
+        userType: company.userType,
+        active: company.active,
+        createdAt: company.createdAt,
+      }));
+      res.json(companiesWithoutPasswords);
+    } catch (error) {
+      console.error("Get all companies error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.post("/api/system/companies", authenticateToken, requireSystemAdmin, async (req: any, res) => {
+    try {
+      const companyData = insertCompanySchema.parse({
+        ...req.body,
+        userType: 'company_admin', // New companies are always company admins
+        active: true,
+      });
+
+      const hashedPassword = await bcrypt.hash(companyData.password, 10);
+      const company = await storage.createCompany({
+        ...companyData,
+        password: hashedPassword,
+      });
+
+      res.status(201).json({
+        id: company.id,
+        name: company.name,
+        email: company.email,
+        cnpj: company.cnpj,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      console.error("Create company error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.patch("/api/system/companies/:id/status", authenticateToken, requireSystemAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { active } = z.object({
+        active: z.boolean(),
+      }).parse(req.body);
+
+      const company = await storage.toggleCompanyStatus(id, active);
+      res.json({
+        id: company.id,
+        name: company.name,
+        email: company.email,
+        active: company.active,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      console.error("Toggle company status error:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });

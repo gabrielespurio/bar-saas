@@ -19,6 +19,7 @@ export const saleStatusEnum = pgEnum('sale_status', ['pending', 'paid', 'cancell
 export const purchaseStatusEnum = pgEnum('purchase_status', ['pending', 'delivered', 'cancelled']);
 export const accountStatusEnum = pgEnum('account_status', ['pending', 'paid', 'overdue', 'cancelled']);
 export const productCategoryEnum = pgEnum('product_category', ['bebidas', 'comidas', 'outros']);
+export const userTypeEnum = pgEnum('user_type', ['system_admin', 'company_admin']);
 
 // Companies table (multi-tenant)
 export const companies = pgTable("companies", {
@@ -28,6 +29,8 @@ export const companies = pgTable("companies", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   phone: varchar("phone", { length: 20 }),
   password: text("password").notNull(),
+  userType: userTypeEnum("user_type").notNull().default("company_admin"),
+  active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

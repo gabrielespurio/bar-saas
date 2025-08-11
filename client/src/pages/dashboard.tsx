@@ -6,6 +6,7 @@ import Purchases from "@/components/modules/Purchases";
 import Inventory from "@/components/modules/Inventory";
 import Financial from "@/components/modules/Financial";
 import Company from "@/components/modules/Company";
+import SystemCompanies from "@/components/modules/SystemCompanies";
 
 export default function Dashboard() {
   const params = useParams();
@@ -23,6 +24,8 @@ export default function Dashboard() {
         return <Financial />;
       case "company":
         return <Company />;
+      case "system-companies":
+        return <SystemCompanies />;
       default:
         return <Overview />;
     }

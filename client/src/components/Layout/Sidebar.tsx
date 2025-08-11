@@ -8,7 +8,11 @@ interface SidebarProps {
 export default function Sidebar({ activeModule }: SidebarProps) {
   const { company, logout } = useAuth();
 
-  const menuItems = [
+  const isSystemAdmin = company?.userType === 'system_admin';
+
+  const menuItems = isSystemAdmin ? [
+    { id: "system-companies", label: "Gerenciar Empresas", icon: "fas fa-building", path: "/dashboard/system-companies" },
+  ] : [
     { id: "overview", label: "Visão Geral", icon: "fas fa-chart-line", path: "/" },
     { id: "sales", label: "Vendas", icon: "fas fa-cash-register", path: "/dashboard/sales" },
     { id: "purchases", label: "Compras", icon: "fas fa-shopping-cart", path: "/dashboard/purchases" },
@@ -55,7 +59,9 @@ export default function Sidebar({ activeModule }: SidebarProps) {
               <i className="fas fa-user"></i>
             </div>
             <div>
-              <small className="d-block opacity-75">Administrador</small>
+              <small className="d-block opacity-75">
+                {isSystemAdmin ? "Super Administrador" : "Administrador"}
+              </small>
               <small className="d-block fw-medium">{company?.email}</small>
             </div>
           </div>

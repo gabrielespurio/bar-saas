@@ -6,6 +6,8 @@ interface Company {
   name: string;
   email: string;
   cnpj: string;
+  userType: 'system_admin' | 'company_admin';
+  active: boolean;
 }
 
 interface AuthContextType {

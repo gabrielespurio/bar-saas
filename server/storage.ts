@@ -34,8 +34,10 @@ export interface IStorage {
   // Company operations
   getCompany(id: string): Promise<Company | undefined>;
   getCompanyByEmail(email: string): Promise<Company | undefined>;
+  getAllCompanies(): Promise<Company[]>; // For system admin
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company>;
+  toggleCompanyStatus(id: string, active: boolean): Promise<Company>;
 
   // Product operations
   getProducts(companyId: string): Promise<Product[]>;
@@ -96,9 +98,22 @@ export class DatabaseStorage implements IStorage {
     return company;
   }
 
+  async getAllCompanies(): Promise<Company[]> {
+    return await db.select().from(companies).orderBy(desc(companies.createdAt));
+  }
+
   async createCompany(company: InsertCompany): Promise<Company> {
     const [newCompany] = await db.insert(companies).values(company).returning();
     return newCompany;
+  }
+
+  async toggleCompanyStatus(id: string, active: boolean): Promise<Company> {
+    const [updatedCompany] = await db
+      .update(companies)
+      .set({ active, updatedAt: new Date() })
+      .where(eq(companies.id, id))
+      .returning();
+    return updatedCompany;
   }
 
   async updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company> {
