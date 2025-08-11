@@ -18,11 +18,15 @@ const createCompanySchema = z.object({
   phone: z.string().min(1, "Telefone é obrigatório"),
   cep: z.string().min(8, "CEP é obrigatório"),
   address: z.string().min(1, "Endereço é obrigatório"),
+  addressNumber: z.string().min(1, "Número é obrigatório"),
   neighborhood: z.string().min(1, "Bairro é obrigatório"),
   city: z.string().min(1, "Cidade é obrigatória"),
   state: z.string().min(1, "Estado é obrigatório"),
   website: z.string().optional(),
   businessType: z.string().min(1, "Tipo de negócio é obrigatório"),
+  ownerName: z.string().min(1, "Nome do proprietário é obrigatório"),
+  ownerEmail: z.string().email("Email do proprietário inválido"),
+  ownerPhone: z.string().min(1, "Telefone do proprietário é obrigatório"),
 });
 
 type CreateCompanyData = z.infer<typeof createCompanySchema>;
@@ -52,11 +56,15 @@ export default function SystemCompanies() {
       phone: "",
       cep: "",
       address: "",
+      addressNumber: "",
       neighborhood: "",
       city: "",
       state: "",
       website: "",
       businessType: "",
+      ownerName: "",
+      ownerEmail: "",
+      ownerPhone: "",
     },
   });
 
@@ -87,6 +95,11 @@ export default function SystemCompanies() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const maskedValue = applyPhoneMask(e.target.value);
     form.setValue('phone', maskedValue);
+  };
+
+  const handleOwnerPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = applyPhoneMask(e.target.value);
+    form.setValue('ownerPhone', maskedValue);
   };
 
   const applyCepMask = (value: string) => {
@@ -321,11 +334,78 @@ export default function SystemCompanies() {
                 </div>
               </div>
 
+              {/* Informações do Proprietário */}
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                  <i className="fas fa-user text-purple-600 mr-2"></i>
+                  Informações do Proprietário
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="ownerName" className="text-sm font-medium text-gray-700">
+                      Nome do Proprietário *
+                    </Label>
+                    <Input
+                      id="ownerName"
+                      data-testid="input-new-company-owner-name"
+                      {...form.register("ownerName")}
+                      placeholder="João Silva"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.ownerName && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.ownerName.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="ownerEmail" className="text-sm font-medium text-gray-700">
+                      Email do Proprietário *
+                    </Label>
+                    <Input
+                      id="ownerEmail"
+                      type="email"
+                      data-testid="input-new-company-owner-email"
+                      {...form.register("ownerEmail")}
+                      placeholder="joao@empresa.com"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.ownerEmail && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.ownerEmail.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="ownerPhone" className="text-sm font-medium text-gray-700">
+                      Telefone do Proprietário *
+                    </Label>
+                    <Input
+                      id="ownerPhone"
+                      data-testid="input-new-company-owner-phone"
+                      value={form.watch("ownerPhone")}
+                      onChange={handleOwnerPhoneChange}
+                      placeholder="(11) 99999-9999"
+                      maxLength={15}
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.ownerPhone && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.ownerPhone.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Contato */}
               <div className="bg-gray-50 p-6 rounded-lg">
                 <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
                   <i className="fas fa-phone text-green-600 mr-2"></i>
-                  Informações de Contato
+                  Informações de Contato da Empresa
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -419,7 +499,7 @@ export default function SystemCompanies() {
                     </p>
                   </div>
 
-                  <div className="md:col-span-2">
+                  <div>
                     <Label htmlFor="address" className="text-sm font-medium text-gray-700">
                       Logradouro *
                     </Label>
@@ -428,12 +508,30 @@ export default function SystemCompanies() {
                       data-testid="input-new-company-address"
                       value={form.watch("address")}
                       onChange={(e) => form.setValue("address", e.target.value)}
-                      placeholder="Rua das Flores, 123"
+                      placeholder="Rua das Flores"
                       className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
                     {form.formState.errors.address && (
                       <p className="text-red-500 text-sm mt-1">
                         {form.formState.errors.address.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="addressNumber" className="text-sm font-medium text-gray-700">
+                      Número *
+                    </Label>
+                    <Input
+                      id="addressNumber"
+                      data-testid="input-new-company-address-number"
+                      {...form.register("addressNumber")}
+                      placeholder="123"
+                      className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {form.formState.errors.addressNumber && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.addressNumber.message}
                       </p>
                     )}
                   </div>
