@@ -199,16 +199,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/system/companies", authenticateToken, requireSystemAdmin, async (req: any, res) => {
     try {
-      const companyData = insertCompanySchema.parse({
-        ...req.body,
-        userType: 'company_admin', // New companies are always company admins
-        active: true,
-      });
+      const companyData = z.object({
+        name: z.string().min(1),
+        cnpj: z.string().min(14),
+        email: z.string().email(),
+        phone: z.string().optional(),
+      }).parse(req.body);
 
-      const hashedPassword = await bcrypt.hash(companyData.password, 10);
+      // Create company without password - admin users will be created separately
+      const defaultPassword = await bcrypt.hash("123456", 10); // Temporary password
       const company = await storage.createCompany({
         ...companyData,
-        password: hashedPassword,
+        password: defaultPassword,
+        userType: 'company_admin',
+        active: true,
       });
 
       res.status(201).json({
@@ -216,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: company.name,
         email: company.email,
         cnpj: company.cnpj,
+        phone: company.phone,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -16,7 +16,6 @@ const createCompanySchema = z.object({
   cnpj: z.string().min(14, "CNPJ deve ter pelo menos 14 caracteres"),
   email: z.string().email("Email inválido"),
   phone: z.string().optional(),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });
 
 type CreateCompanyData = z.infer<typeof createCompanySchema>;
@@ -44,9 +43,37 @@ export default function SystemCompanies() {
       cnpj: "",
       email: "",
       phone: "",
-      password: "",
     },
   });
+
+  // Mask functions
+  const applyCnpjMask = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2')
+      .substring(0, 18);
+  };
+
+  const applyPhoneMask = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/^(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d)/, '$1-$2')
+      .substring(0, 15);
+  };
+
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = applyCnpjMask(e.target.value);
+    form.setValue('cnpj', maskedValue);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = applyPhoneMask(e.target.value);
+    form.setValue('phone', maskedValue);
+  };
 
   const { data: companies = [], isLoading, error } = useQuery({
     queryKey: ['/api/system/companies'],
@@ -68,7 +95,7 @@ export default function SystemCompanies() {
       form.reset();
       toast({
         title: "Empresa criada",
-        description: "A nova empresa foi registrada com sucesso",
+        description: "A nova empresa foi registrada com sucesso. Um usuário admin pode ser criado posteriormente.",
       });
     },
     onError: (error: any) => {
@@ -176,8 +203,10 @@ export default function SystemCompanies() {
                   <Input
                     id="cnpj"
                     data-testid="input-new-company-cnpj"
-                    {...form.register("cnpj")}
+                    value={form.watch("cnpj")}
+                    onChange={handleCnpjChange}
                     placeholder="00.000.000/0000-00"
+                    maxLength={18}
                   />
                   {form.formState.errors.cnpj && (
                     <small className="text-danger">
@@ -196,6 +225,7 @@ export default function SystemCompanies() {
                     data-testid="input-new-company-email"
                     {...form.register("email")}
                     placeholder="empresa@exemplo.com"
+                    className={form.formState.errors.email ? "border-danger" : ""}
                   />
                   {form.formState.errors.email && (
                     <small className="text-danger">
@@ -209,8 +239,10 @@ export default function SystemCompanies() {
                   <Input
                     id="phone"
                     data-testid="input-new-company-phone"
-                    {...form.register("phone")}
+                    value={form.watch("phone")}
+                    onChange={handlePhoneChange}
                     placeholder="(11) 99999-9999"
+                    maxLength={15}
                   />
                   {form.formState.errors.phone && (
                     <small className="text-danger">
@@ -220,21 +252,7 @@ export default function SystemCompanies() {
                 </div>
               </div>
 
-              <div className="mb-3">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  data-testid="input-new-company-password"
-                  {...form.register("password")}
-                  placeholder="Senha de acesso"
-                />
-                {form.formState.errors.password && (
-                  <small className="text-danger">
-                    {form.formState.errors.password.message}
-                  </small>
-                )}
-              </div>
+
 
               <div className="d-flex justify-content-end gap-2">
                 <Button
