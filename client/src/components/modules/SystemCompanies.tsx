@@ -149,11 +149,11 @@ export default function SystemCompanies() {
   };
 
   const { data: companies = [], isLoading, error } = useQuery({
-    queryKey: ['/api/system/companies'],
+    queryKey: ['system/companies'],
     queryFn: async () => {
       try {
         console.log('Fetching companies...');
-        const response = await api.get('/api/system/companies');
+        const response = await api.get('/system/companies');
         console.log('Companies API response:', response.data);
         const companiesData = Array.isArray(response.data) ? response.data : [];
         console.log('Processed companies data:', companiesData);
@@ -167,11 +167,11 @@ export default function SystemCompanies() {
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: CreateCompanyData) => {
-      const response = await api.post('/api/system/companies', data);
+      const response = await api.post('/system/companies', data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/system/companies'] });
+      queryClient.invalidateQueries({ queryKey: ['system/companies'] });
       setIsDialogOpen(false);
       form.reset();
       toast({
@@ -190,7 +190,7 @@ export default function SystemCompanies() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const response = await api.patch(`/api/system/companies/${id}/status`, { active });
+      const response = await api.patch(`/system/companies/${id}/status`, { active });
       return response.data;
     },
     onSuccess: () => {
