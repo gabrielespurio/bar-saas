@@ -46,6 +46,19 @@ export const companies = pgTable("companies", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Company Users table (additional admin users for companies)
+export const companyUsers = pgTable("company_users", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: text("password").notNull(),
+  userType: userTypeEnum("user_type").notNull().default("company_admin"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Products table
 export const products = pgTable("products", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -148,6 +161,14 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   purchases: many(purchases),
   accountsReceivable: many(accountsReceivable),
   accountsPayable: many(accountsPayable),
+  companyUsers: many(companyUsers),
+}));
+
+export const companyUsersRelations = relations(companyUsers, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyUsers.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const productsRelations = relations(products, ({ one, many }) => ({
@@ -283,6 +304,12 @@ export const insertAccountPayableSchema = createInsertSchema(accountsPayable).om
   updatedAt: true,
 });
 
+export const insertCompanyUserSchema = createInsertSchema(companyUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
@@ -302,6 +329,8 @@ export type AccountReceivable = typeof accountsReceivable.$inferSelect;
 export type InsertAccountReceivable = z.infer<typeof insertAccountReceivableSchema>;
 export type AccountPayable = typeof accountsPayable.$inferSelect;
 export type InsertAccountPayable = z.infer<typeof insertAccountPayableSchema>;
+export type CompanyUser = typeof companyUsers.$inferSelect;
+export type InsertCompanyUser = z.infer<typeof insertCompanyUserSchema>;
 
 // Authentication schemas
 export const loginSchema = z.object({

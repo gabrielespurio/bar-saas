@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { loginSchema, registerSchema, insertCompanySchema, insertProductSchema, insertSupplierSchema } from "@shared/schema";
+import { loginSchema, registerSchema, insertCompanySchema, insertProductSchema, insertSupplierSchema, insertCompanyUserSchema } from "@shared/schema";
 import { z } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
@@ -272,6 +272,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
       console.error("Toggle company status error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Company Users management routes
+  app.get("/api/system/companies/:companyId/users", authenticateToken, requireSystemAdmin, async (req: any, res) => {
+    try {
+      const { companyId } = req.params;
+      const users = await storage.getCompanyUsers(companyId);
+      const usersWithoutPasswords = users.map(user => ({
+        id: user.id,
+        companyId: user.companyId,
+        name: user.name,
+        email: user.email,
+        userType: user.userType,
+        active: user.active,
+        createdAt: user.createdAt,
+      }));
+      res.json(usersWithoutPasswords);
+    } catch (error) {
+      console.error("Get company users error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.post("/api/system/companies/:companyId/users", authenticateToken, requireSystemAdmin, async (req: any, res) => {
+    try {
+      const { companyId } = req.params;
+      const userData = z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        password: z.string().min(6),
+      }).parse(req.body);
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+
+      const user = await storage.createCompanyUser({
+        companyId: companyId,
+        name: userData.name,
+        email: userData.email,
+        password: hashedPassword,
+        userType: 'company_admin',
+        active: true,
+      });
+
+      res.status(201).json({
+        id: user.id,
+        companyId: user.companyId,
+        name: user.name,
+        email: user.email,
+        userType: user.userType,
+        active: user.active,
+        createdAt: user.createdAt,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      console.error("Create company user error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.patch("/api/system/companies/:companyId/users/:userId/status", authenticateToken, requireSystemAdmin, async (req: any, res) => {
+    try {
+      const { companyId, userId } = req.params;
+      const { active } = z.object({
+        active: z.boolean(),
+      }).parse(req.body);
+
+      const user = await storage.toggleCompanyUserStatus(userId, companyId, active);
+      res.json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        active: user.active,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      console.error("Toggle user status error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.delete("/api/system/companies/:companyId/users/:userId", authenticateToken, requireSystemAdmin, async (req: any, res) => {
+    try {
+      const { companyId, userId } = req.params;
+      await storage.deleteCompanyUser(userId, companyId);
+      res.json({ message: "Usuário removido com sucesso" });
+    } catch (error) {
+      console.error("Delete company user error:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });

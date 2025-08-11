@@ -26,6 +26,9 @@ import {
   type InsertAccountReceivable,
   type AccountPayable,
   type InsertAccountPayable,
+  companyUsers,
+  type CompanyUser,
+  type InsertCompanyUser,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sum, count, gte, lte, sql } from "drizzle-orm";
@@ -38,6 +41,14 @@ export interface IStorage {
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company>;
   toggleCompanyStatus(id: string, active: boolean): Promise<Company>;
+
+  // Company Users operations
+  getCompanyUsers(companyId: string): Promise<CompanyUser[]>;
+  getCompanyUser(id: string, companyId: string): Promise<CompanyUser | undefined>;
+  createCompanyUser(user: InsertCompanyUser): Promise<CompanyUser>;
+  updateCompanyUser(id: string, companyId: string, user: Partial<InsertCompanyUser>): Promise<CompanyUser>;
+  deleteCompanyUser(id: string, companyId: string): Promise<void>;
+  toggleCompanyUserStatus(id: string, companyId: string, active: boolean): Promise<CompanyUser>;
 
   // Product operations
   getProducts(companyId: string): Promise<Product[]>;
@@ -123,6 +134,46 @@ export class DatabaseStorage implements IStorage {
       .where(eq(companies.id, id))
       .returning();
     return updatedCompany;
+  }
+
+  // Company Users operations
+  async getCompanyUsers(companyId: string): Promise<CompanyUser[]> {
+    return await db.select().from(companyUsers).where(eq(companyUsers.companyId, companyId)).orderBy(desc(companyUsers.createdAt));
+  }
+
+  async getCompanyUser(id: string, companyId: string): Promise<CompanyUser | undefined> {
+    const [user] = await db
+      .select()
+      .from(companyUsers)
+      .where(and(eq(companyUsers.id, id), eq(companyUsers.companyId, companyId)));
+    return user;
+  }
+
+  async createCompanyUser(user: InsertCompanyUser): Promise<CompanyUser> {
+    const [newUser] = await db.insert(companyUsers).values(user).returning();
+    return newUser;
+  }
+
+  async updateCompanyUser(id: string, companyId: string, user: Partial<InsertCompanyUser>): Promise<CompanyUser> {
+    const [updatedUser] = await db
+      .update(companyUsers)
+      .set({ ...user, updatedAt: new Date() })
+      .where(and(eq(companyUsers.id, id), eq(companyUsers.companyId, companyId)))
+      .returning();
+    return updatedUser;
+  }
+
+  async deleteCompanyUser(id: string, companyId: string): Promise<void> {
+    await db.delete(companyUsers).where(and(eq(companyUsers.id, id), eq(companyUsers.companyId, companyId)));
+  }
+
+  async toggleCompanyUserStatus(id: string, companyId: string, active: boolean): Promise<CompanyUser> {
+    const [updatedUser] = await db
+      .update(companyUsers)
+      .set({ active, updatedAt: new Date() })
+      .where(and(eq(companyUsers.id, id), eq(companyUsers.companyId, companyId)))
+      .returning();
+    return updatedUser;
   }
 
   // Product operations

@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { MoreVertical, Edit, Power, PowerOff, Users } from "lucide-react";
 
 const createCompanySchema = z.object({
   name: z.string().min(1, "Nome da empresa é obrigatório"),
@@ -42,10 +44,31 @@ interface Company {
   createdAt: string;
 }
 
+interface CompanyUser {
+  id: string;
+  companyId: string;
+  name: string;
+  email: string;
+  userType: 'company_admin';
+  active: boolean;
+  createdAt: string;
+}
+
+const createUserSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+});
+
+type CreateUserData = z.infer<typeof createUserSchema>;
+
 export default function SystemCompanies() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
 
   const form = useForm<CreateCompanyData>({
     resolver: zodResolver(createCompanySchema),
@@ -65,6 +88,15 @@ export default function SystemCompanies() {
       ownerName: "",
       ownerEmail: "",
       ownerPhone: "",
+    },
+  });
+
+  const userForm = useForm<CreateUserData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
     },
   });
 
@@ -194,7 +226,7 @@ export default function SystemCompanies() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/system/companies'] });
+      queryClient.invalidateQueries({ queryKey: ['system/companies'] });
       toast({
         title: "Status atualizado",
         description: "Status da empresa foi alterado com sucesso",
@@ -209,12 +241,92 @@ export default function SystemCompanies() {
     },
   });
 
+  // Buscar usuários da empresa
+  const { data: companyUsers = [], isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['company-users', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany) return [];
+      const response = await api.get(`/system/companies/${selectedCompany.id}/users`);
+      return response.data;
+    },
+    enabled: !!selectedCompany && isUsersModalOpen,
+  });
+
+  // Criar usuário da empresa
+  const createUserMutation = useMutation({
+    mutationFn: async (data: CreateUserData) => {
+      if (!selectedCompany) throw new Error('Empresa não selecionada');
+      const response = await api.post(`/system/companies/${selectedCompany.id}/users`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company-users', selectedCompany?.id] });
+      setIsCreateUserDialogOpen(false);
+      userForm.reset();
+      toast({
+        title: "Usuário criado",
+        description: "Usuário administrador criado com sucesso",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao criar usuário",
+        description: error.response?.data?.message || "Erro ao criar usuário",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Alterar status do usuário
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
+      if (!selectedCompany) throw new Error('Empresa não selecionada');
+      const response = await api.patch(`/system/companies/${selectedCompany.id}/users/${userId}/status`, { active });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company-users', selectedCompany?.id] });
+      toast({
+        title: "Status atualizado",
+        description: "Status do usuário foi alterado com sucesso",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao alterar status",
+        description: error.response?.data?.message || "Erro ao alterar status do usuário",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: CreateCompanyData) => {
     createCompanyMutation.mutate(data);
   };
 
+  const onSubmitUser = (data: CreateUserData) => {
+    createUserMutation.mutate(data);
+  };
+
   const handleToggleStatus = (company: Company) => {
     toggleStatusMutation.mutate({ id: company.id, active: !company.active });
+  };
+
+  const handleToggleUserStatus = (user: CompanyUser) => {
+    toggleUserStatusMutation.mutate({ userId: user.id, active: !user.active });
+  };
+
+  const handleManageUsers = (company: Company) => {
+    setSelectedCompany(company);
+    setIsUsersModalOpen(true);
+  };
+
+  const handleEditCompany = (company: Company) => {
+    // Implementar edição da empresa
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A edição de empresas será implementada em breve",
+    });
   };
 
   if (isLoading) {
@@ -702,26 +814,52 @@ export default function SystemCompanies() {
                         {new Date(company.createdAt).toLocaleDateString('pt-BR')}
                       </td>
                       <td data-testid={`company-actions-${company.id}`}>
-                        {company.userType !== 'system_admin' && (
-                          <Button
-                            size="sm"
-                            variant={company.active ? "destructive" : "outline"}
-                            onClick={() => handleToggleStatus(company)}
-                            disabled={toggleStatusMutation.isPending}
-                            data-testid={`button-toggle-status-${company.id}`}
-                          >
-                            {company.active ? (
-                              <>
-                                <i className="fas fa-ban me-1"></i>
-                                Desativar
-                              </>
-                            ) : (
-                              <>
-                                <i className="fas fa-check me-1"></i>
-                                Ativar
-                              </>
-                            )}
-                          </Button>
+                        {company.userType !== 'system_admin' ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0"
+                                data-testid={`dropdown-actions-${company.id}`}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                onClick={() => handleEditCompany(company)}
+                                data-testid={`action-edit-${company.id}`}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleStatus(company)}
+                                data-testid={`action-toggle-${company.id}`}
+                              >
+                                {company.active ? (
+                                  <>
+                                    <PowerOff className="mr-2 h-4 w-4" />
+                                    Inativar
+                                  </>
+                                ) : (
+                                  <>
+                                    <Power className="mr-2 h-4 w-4" />
+                                    Ativar
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleManageUsers(company)}
+                                data-testid={`action-manage-users-${company.id}`}
+                              >
+                                <Users className="mr-2 h-4 w-4" />
+                                Gerenciar Usuários
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <span className="text-muted-small">Superadmin</span>
                         )}
                       </td>
                     </tr>
@@ -732,6 +870,178 @@ export default function SystemCompanies() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de Gerenciar Usuários */}
+      <Dialog open={isUsersModalOpen} onOpenChange={setIsUsersModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+          <DialogHeader className="border-b pb-4 mb-6">
+            <DialogTitle className="text-2xl font-semibold text-gray-800">
+              Gerenciar Usuários - {selectedCompany?.name}
+            </DialogTitle>
+            <p className="text-gray-600 mt-2">
+              Visualize e gerencie os usuários administradores desta empresa.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Botão para criar novo usuário */}
+            <div className="flex justify-end">
+              <Dialog open={isCreateUserDialogOpen} onOpenChange={setIsCreateUserDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button data-testid="button-new-user" className="bg-blue-600 hover:bg-blue-700">
+                    <Users className="mr-2 h-4 w-4" />
+                    Novo Usuário Admin
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Criar Usuário Administrador</DialogTitle>
+                    <p className="text-gray-600">
+                      Crie um novo usuário administrador para {selectedCompany?.name}
+                    </p>
+                  </DialogHeader>
+                  
+                  <form onSubmit={userForm.handleSubmit(onSubmitUser)} className="space-y-4">
+                    <div>
+                      <Label htmlFor="userName">Nome completo *</Label>
+                      <Input
+                        id="userName"
+                        data-testid="input-user-name"
+                        {...userForm.register("name")}
+                        placeholder="João Silva"
+                      />
+                      {userForm.formState.errors.name && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {userForm.formState.errors.name.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="userEmail">Email *</Label>
+                      <Input
+                        id="userEmail"
+                        data-testid="input-user-email"
+                        {...userForm.register("email")}
+                        placeholder="joao@empresa.com"
+                        type="email"
+                      />
+                      {userForm.formState.errors.email && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {userForm.formState.errors.email.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="userPassword">Senha *</Label>
+                      <Input
+                        id="userPassword"
+                        data-testid="input-user-password"
+                        {...userForm.register("password")}
+                        placeholder="Mínimo 6 caracteres"
+                        type="password"
+                      />
+                      {userForm.formState.errors.password && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {userForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsCreateUserDialogOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createUserMutation.isPending}
+                        data-testid="button-save-user"
+                      >
+                        {createUserMutation.isPending ? (
+                          <>
+                            <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                            Criando...
+                          </>
+                        ) : (
+                          'Criar Usuário'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Lista de usuários */}
+            <div className="border rounded-lg">
+              {isLoadingUsers ? (
+                <div className="p-6 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-gray-600">Carregando usuários...</p>
+                </div>
+              ) : companyUsers.length === 0 ? (
+                <div className="p-6 text-center">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 mb-2">Nenhum usuário administrador encontrado</p>
+                  <p className="text-sm text-gray-500">Clique em "Novo Usuário Admin" para criar o primeiro</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nome</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Criado em</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {companyUsers.map((user: CompanyUser) => (
+                        <tr key={user.id} data-testid={`user-row-${user.id}`}>
+                          <td className="px-4 py-3" data-testid={`user-name-${user.id}`}>
+                            {user.name}
+                          </td>
+                          <td className="px-4 py-3" data-testid={`user-email-${user.id}`}>
+                            {user.email}
+                          </td>
+                          <td className="px-4 py-3" data-testid={`user-status-${user.id}`}>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.active ? 'Ativo' : 'Inativo'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500" data-testid={`user-created-${user.id}`}>
+                            {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                          </td>
+                          <td className="px-4 py-3" data-testid={`user-actions-${user.id}`}>
+                            <Button
+                              size="sm"
+                              variant={user.active ? "destructive" : "outline"}
+                              onClick={() => handleToggleUserStatus(user)}
+                              disabled={toggleUserStatusMutation.isPending}
+                              data-testid={`button-toggle-user-status-${user.id}`}
+                            >
+                              {user.active ? 'Inativar' : 'Ativar'}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
