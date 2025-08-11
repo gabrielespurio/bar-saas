@@ -32,18 +32,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password } = loginSchema.parse(req.body);
       
+      // First, check if it's a company login
       const company = await storage.getCompanyByEmail(email);
-      if (!company) {
+      if (company) {
+        const isValidPassword = await bcrypt.compare(password, company.password);
+        if (!isValidPassword) {
+          return res.status(401).json({ message: "Email ou senha inválidos" });
+        }
+
+        if (!company.active) {
+          return res.status(401).json({ message: "Empresa inativa. Entre em contato com o suporte." });
+        }
+
+        const token = jwt.sign(
+          { companyId: company.id, email: company.email, userType: company.userType, userId: company.id },
+          JWT_SECRET,
+          { expiresIn: "24h" }
+        );
+
+        return res.json({
+          token,
+          company: {
+            id: company.id,
+            name: company.name,
+            email: company.email,
+            cnpj: company.cnpj,
+            userType: company.userType,
+            active: company.active,
+          },
+        });
+      }
+
+      // If not found in companies, check company users
+      const companyUser = await storage.getCompanyUserByEmail(email);
+      if (!companyUser) {
         return res.status(401).json({ message: "Email ou senha inválidos" });
       }
 
-      const isValidPassword = await bcrypt.compare(password, company.password);
+      const isValidPassword = await bcrypt.compare(password, companyUser.password);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Email ou senha inválidos" });
       }
 
+      if (!companyUser.active) {
+        return res.status(401).json({ message: "Usuário inativo. Entre em contato com o administrador da empresa." });
+      }
+
+      // Get company information for the user
+      const userCompany = await storage.getCompany(companyUser.companyId);
+      if (!userCompany || !userCompany.active) {
+        return res.status(401).json({ message: "Empresa inativa. Entre em contato com o suporte." });
+      }
+
       const token = jwt.sign(
-        { companyId: company.id, email: company.email, userType: company.userType },
+        { 
+          companyId: companyUser.companyId, 
+          email: companyUser.email, 
+          userType: companyUser.userType,
+          userId: companyUser.id 
+        },
         JWT_SECRET,
         { expiresIn: "24h" }
       );
@@ -51,12 +98,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         token,
         company: {
-          id: company.id,
-          name: company.name,
-          email: company.email,
-          cnpj: company.cnpj,
-          userType: company.userType,
-          active: company.active,
+          id: userCompany.id,
+          name: userCompany.name,
+          email: companyUser.email, // Use the user's email, not company email
+          cnpj: userCompany.cnpj,
+          userType: companyUser.userType,
+          active: companyUser.active,
         },
       });
     } catch (error) {

@@ -45,6 +45,7 @@ export interface IStorage {
   // Company Users operations
   getCompanyUsers(companyId: string): Promise<CompanyUser[]>;
   getCompanyUser(id: string, companyId: string): Promise<CompanyUser | undefined>;
+  getCompanyUserByEmail(email: string): Promise<CompanyUser | undefined>;
   createCompanyUser(user: InsertCompanyUser): Promise<CompanyUser>;
   updateCompanyUser(id: string, companyId: string, user: Partial<InsertCompanyUser>): Promise<CompanyUser>;
   deleteCompanyUser(id: string, companyId: string): Promise<void>;
@@ -146,6 +147,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(companyUsers)
       .where(and(eq(companyUsers.id, id), eq(companyUsers.companyId, companyId)));
+    return user;
+  }
+
+  async getCompanyUserByEmail(email: string): Promise<CompanyUser | undefined> {
+    const [user] = await db.select().from(companyUsers).where(eq(companyUsers.email, email));
     return user;
   }
 
