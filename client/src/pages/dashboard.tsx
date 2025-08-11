@@ -5,7 +5,7 @@ import Sales from "@/components/modules/Sales";
 import Purchases from "@/components/modules/Purchases";
 import Inventory from "@/components/modules/Inventory";
 import Financial from "@/components/modules/Financial";
-import Company from "@/components/modules/Company";
+import Company from "../components/modules/Company";
 import SystemCompanies from "@/components/modules/SystemCompanies";
 
 export default function Dashboard() {

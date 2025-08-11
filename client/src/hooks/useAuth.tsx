@@ -87,6 +87,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("company");
     
     delete api.defaults.headers.common["Authorization"];
+    
+    // Force redirect to login page
+    window.location.href = "/login";
   };
 
   return (
