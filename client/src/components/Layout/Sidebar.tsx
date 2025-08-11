@@ -14,6 +14,7 @@ export default function Sidebar({ activeModule }: SidebarProps) {
     { id: "purchases", label: "Compras", icon: "fas fa-shopping-cart", path: "/dashboard/purchases" },
     { id: "inventory", label: "Estoque", icon: "fas fa-boxes", path: "/dashboard/inventory" },
     { id: "financial", label: "Financeiro", icon: "fas fa-chart-pie", path: "/dashboard/financial" },
+    { id: "company", label: "Empresa", icon: "fas fa-building", path: "/dashboard/company" },
   ];
 
   return (

@@ -130,6 +130,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company management routes
+  app.put("/api/companies/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Ensure user can only update their own company
+      if (id !== req.user.companyId) {
+        return res.status(403).json({ message: "Não autorizado" });
+      }
+
+      const updateData = z.object({
+        name: z.string().min(1).optional(),
+        cnpj: z.string().min(14).optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+      }).parse(req.body);
+
+      const company = await storage.updateCompany(id, updateData);
+      res.json({
+        id: company.id,
+        name: company.name,
+        email: company.email,
+        cnpj: company.cnpj,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      console.error("Update company error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Dashboard stats
   app.get("/api/dashboard/stats", authenticateToken, async (req: any, res) => {
     try {
