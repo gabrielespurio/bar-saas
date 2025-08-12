@@ -20,8 +20,6 @@ import { ptBR } from "date-fns/locale";
 
 const purchaseOrderSchema = z.object({
   supplierId: z.string().min(1, "Fornecedor é obrigatório"),
-  expectedDeliveryDate: z.string().optional(),
-  notes: z.string().optional(),
   items: z.array(z.object({
     productId: z.string().min(1, "Produto é obrigatório"),
     quantity: z.number().min(1, "Quantidade deve ser maior que 0"),
@@ -42,8 +40,6 @@ export default function PurchaseOrders() {
     resolver: zodResolver(purchaseOrderSchema),
     defaultValues: {
       supplierId: "",
-      expectedDeliveryDate: "",
-      notes: "",
       items: [{ productId: "", quantity: 1, unitPrice: 0 }],
     },
   });
@@ -177,63 +173,26 @@ export default function PurchaseOrders() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="supplierId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fornecedor</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-supplier">
-                              <SelectValue placeholder="Selecione um fornecedor" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {suppliers.map((supplier: any) => (
-                              <SelectItem key={supplier.id} value={supplier.id}>
-                                {supplier.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="expectedDeliveryDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Entrega Esperada</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                            data-testid="input-delivery-date"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <FormField
                   control={form.control}
-                  name="notes"
+                  name="supplierId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Observações sobre o pedido..."
-                          {...field}
-                          data-testid="textarea-notes"
-                        />
-                      </FormControl>
+                      <FormLabel>Fornecedor</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-supplier">
+                            <SelectValue placeholder="Selecione um fornecedor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {suppliers.map((supplier: any) => (
+                            <SelectItem key={supplier.id} value={supplier.id}>
+                              {supplier.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -366,7 +325,7 @@ export default function PurchaseOrders() {
                   <TableHead>Total</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data</TableHead>
-                  <TableHead>Entrega</TableHead>
+
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -374,7 +333,7 @@ export default function PurchaseOrders() {
                 {purchaseOrders.map((order: any) => (
                   <TableRow key={order.id} data-testid={`order-row-${order.id}`}>
                     <TableCell className="font-medium">
-                      {order.purchaseNumber || `#${order.id.slice(-8)}`}
+                      #{order.id.slice(-8)}
                     </TableCell>
                     <TableCell>{order.supplier?.name || "N/A"}</TableCell>
                     <TableCell>{formatCurrency(order.total)}</TableCell>
@@ -382,12 +341,7 @@ export default function PurchaseOrders() {
                     <TableCell>
                       {format(new Date(order.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                     </TableCell>
-                    <TableCell>
-                      {order.expectedDeliveryDate 
-                        ? format(new Date(order.expectedDeliveryDate), "dd/MM/yyyy", { locale: ptBR })
-                        : "N/A"
-                      }
-                    </TableCell>
+
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button
@@ -434,7 +388,7 @@ export default function PurchaseOrders() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Número do Pedido</label>
-                  <p>{selectedOrder.purchaseNumber || `#${selectedOrder.id.slice(-8)}`}</p>
+                  <p>#{selectedOrder.id.slice(-8)}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Fornecedor</label>

@@ -217,7 +217,7 @@ export default function PurchaseReceiving() {
                     className={isOverdue(order) ? "bg-red-50" : ""}
                   >
                     <TableCell className="font-medium">
-                      {order.purchaseNumber || `#${order.id.slice(-8)}`}
+                      #{order.id.slice(-8)}
                     </TableCell>
                     <TableCell>{order.supplier?.name || "N/A"}</TableCell>
                     <TableCell>{formatCurrency(order.total)}</TableCell>
@@ -289,7 +289,7 @@ export default function PurchaseReceiving() {
                 {completedReceiving.map((order: any) => (
                   <TableRow key={order.id} data-testid={`completed-row-${order.id}`}>
                     <TableCell className="font-medium">
-                      {order.purchaseNumber || `#${order.id.slice(-8)}`}
+                      #{order.id.slice(-8)}
                     </TableCell>
                     <TableCell>{order.supplier?.name || "N/A"}</TableCell>
                     <TableCell>{formatCurrency(order.total)}</TableCell>
@@ -320,7 +320,7 @@ export default function PurchaseReceiving() {
           {selectedOrder && (
             <div className="space-y-4">
               <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-medium">Pedido {selectedOrder.purchaseNumber || `#${selectedOrder.id.slice(-8)}`}</h4>
+                <h4 className="font-medium">Pedido #{selectedOrder.id.slice(-8)}</h4>
                 <p className="text-sm text-muted-foreground">
                   Fornecedor: {selectedOrder.supplier?.name || "N/A"}
                 </p>
