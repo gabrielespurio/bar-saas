@@ -262,16 +262,14 @@ export default function Inventory() {
         </CardContent>
       </Card>
 
-      {showNewProductModal && (
-        <Dialog open={showNewProductModal} onOpenChange={setShowNewProductModal}>
-          <DialogContent className="max-w-2xl">
-            <NewProductModal 
-              isOpen={showNewProductModal}
-              onClose={() => setShowNewProductModal(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={showNewProductModal} onOpenChange={setShowNewProductModal}>
+        <DialogContent className="max-w-2xl">
+          <NewProductModal 
+            isOpen={showNewProductModal}
+            onClose={() => setShowNewProductModal(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
