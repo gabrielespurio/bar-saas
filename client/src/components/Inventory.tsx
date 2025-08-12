@@ -6,12 +6,12 @@ import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Boxes, CheckCircle, AlertTriangle, XCircle, Plus, Search, Trash2, Edit } from "lucide-react";
-import NewProductModal from "@/components/modals/NewProductModal";
+import ProductModal from "@/components/modals/ProductModal";
 
 export default function Inventory() {
   const [showNewProductModal, setShowNewProductModal] = useState(false);
@@ -262,17 +262,10 @@ export default function Inventory() {
         </CardContent>
       </Card>
 
-      <Dialog open={showNewProductModal} onOpenChange={setShowNewProductModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Novo Produto</DialogTitle>
-          </DialogHeader>
-          <NewProductModal 
-            isOpen={showNewProductModal}
-            onClose={() => setShowNewProductModal(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <ProductModal 
+        isOpen={showNewProductModal}
+        onClose={() => setShowNewProductModal(false)}
+      />
     </div>
   );
 }
