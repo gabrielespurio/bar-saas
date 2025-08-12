@@ -95,20 +95,13 @@ export default function Inventory() {
           <h2 className="text-2xl font-bold text-gray-900">Estoque</h2>
           <p className="text-gray-600">Controle de produtos e quantidades</p>
         </div>
-        <Dialog open={showNewProductModal} onOpenChange={setShowNewProductModal}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Produto
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <NewProductModal 
-              isOpen={showNewProductModal}
-              onClose={() => setShowNewProductModal(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowNewProductModal(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Novo Produto
+        </Button>
       </div>
 
       {/* Inventory Stats */}
@@ -268,6 +261,17 @@ export default function Inventory() {
           )}
         </CardContent>
       </Card>
+
+      {showNewProductModal && (
+        <Dialog open={showNewProductModal} onOpenChange={setShowNewProductModal}>
+          <DialogContent className="max-w-2xl">
+            <NewProductModal 
+              isOpen={showNewProductModal}
+              onClose={() => setShowNewProductModal(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
