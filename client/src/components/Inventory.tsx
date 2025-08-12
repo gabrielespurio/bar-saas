@@ -97,7 +97,10 @@ export default function Inventory() {
         </div>
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
-          onClick={() => setShowNewProductModal(true)}
+          onClick={() => {
+            console.log('Button clicked, setting modal to true');
+            setShowNewProductModal(true);
+          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Novo Produto
@@ -262,9 +265,13 @@ export default function Inventory() {
         </CardContent>
       </Card>
 
+      {/* Debug - Modal state: {showNewProductModal ? 'OPEN' : 'CLOSED'} */}
       <ProductModal 
         isOpen={showNewProductModal}
-        onClose={() => setShowNewProductModal(false)}
+        onClose={() => {
+          console.log('Modal close clicked');
+          setShowNewProductModal(false);
+        }}
       />
     </div>
   );

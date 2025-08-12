@@ -3,7 +3,7 @@ import Sidebar from "@/components/Layout/Sidebar";
 import Overview from "@/components/modules/Overview";
 import Sales from "@/components/modules/Sales";
 import Purchases from "@/components/modules/Purchases";
-import Inventory from "@/components/modules/Inventory";
+import Inventory from "@/components/Inventory";
 import Financial from "@/components/modules/Financial";
 import Company from "../components/modules/Company";
 import SystemCompanies from "@/components/modules/SystemCompanies";

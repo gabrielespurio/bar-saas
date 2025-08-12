@@ -63,8 +63,12 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
     createProductMutation.mutate(data);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('ProductModal not open');
+    return null;
+  }
 
+  console.log('ProductModal is open, rendering...');
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Overlay */}
