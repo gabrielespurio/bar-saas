@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,8 +65,8 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Overlay */}
       <div 
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
@@ -229,6 +230,7 @@ export default function ProductModal({ isOpen, onClose }: ProductModalProps) {
           </Form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
