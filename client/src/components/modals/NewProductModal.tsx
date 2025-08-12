@@ -64,13 +64,7 @@ export default function NewProductModal({ isOpen, onClose }: NewProductModalProp
   };
 
   return (
-    <>
-      <div className="space-y-1.5 text-center sm:text-left">
-        <h2 className="text-lg font-semibold leading-none tracking-tight">Novo Produto</h2>
-        <p className="text-sm text-muted-foreground">Adicione um novo produto ao seu estoque</p>
-      </div>
-      
-      <Form {...form}>
+    <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <FormField
@@ -198,6 +192,5 @@ export default function NewProductModal({ isOpen, onClose }: NewProductModalProp
           </div>
         </form>
       </Form>
-    </>
   );
 }
