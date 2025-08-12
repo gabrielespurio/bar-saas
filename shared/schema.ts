@@ -111,8 +111,12 @@ export const purchases = pgTable("purchases", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
   supplierId: uuid("supplier_id").notNull().references(() => suppliers.id),
+  purchaseNumber: varchar("purchase_number", { length: 50 }).notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   status: purchaseStatusEnum("status").notNull().default("pending"),
+  expectedDeliveryDate: timestamp("expected_delivery_date"),
+  deliveredDate: timestamp("delivered_date"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
