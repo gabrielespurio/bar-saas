@@ -64,10 +64,10 @@ export default function NewProductModal({ isOpen, onClose }: NewProductModalProp
   };
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Novo Produto</DialogTitle>
-      </DialogHeader>
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <h2 className="text-lg font-semibold">Novo Produto</h2>
+      </div>
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -197,6 +197,6 @@ export default function NewProductModal({ isOpen, onClose }: NewProductModalProp
           </div>
         </form>
       </Form>
-    </>
+    </div>
   );
 }
