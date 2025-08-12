@@ -1,193 +1,202 @@
 import { useState } from "react";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
+import { apiRequest } from "@/lib/queryClient";
+import { insertProductSchema } from "@shared/schema";
+import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 interface NewProductModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function NewProductModal({ isOpen, onClose }: NewProductModalProps) {
-  const [formData, setFormData] = useState({
-    code: "",
-    name: "",
-    category: "bebidas",
-    price: "",
-    quantity: "",
-    minStock: "",
-  });
+const productFormSchema = insertProductSchema.omit({ companyId: true });
 
+export default function NewProductModal({ isOpen, onClose }: NewProductModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const form = useForm<z.infer<typeof productFormSchema>>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues: {
+      code: "",
+      name: "",
+      category: "bebidas",
+      price: "0",
+      quantity: 0,
+      minStock: 0,
+    },
+  });
+
   const createProductMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await api.post("/products", data);
-      return response.data;
+    mutationFn: async (data: z.infer<typeof productFormSchema>) => {
+      await apiRequest("POST", "/api/products", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
         title: "Produto criado",
         description: "Produto criado com sucesso",
       });
+      form.reset();
       onClose();
-      setFormData({
-        code: "",
-        name: "",
-        category: "bebidas",
-        price: "",
-        quantity: "",
-        minStock: "",
-      });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Erro",
-        description: "Erro ao criar produto",
+        description: error.message || "Erro ao criar produto",
         variant: "destructive",
       });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createProductMutation.mutate({
-      ...formData,
-      price: parseFloat(formData.price),
-      quantity: parseInt(formData.quantity),
-      minStock: parseInt(formData.minStock),
-    });
+  const onSubmit = (data: z.infer<typeof productFormSchema>) => {
+    createProductMutation.mutate(data);
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Novo Produto</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            ×
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Código
-            </label>
-            <input
-              type="text"
+    <>
+      <DialogHeader>
+        <DialogTitle>Novo Produto</DialogTitle>
+      </DialogHeader>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
               name="code"
-              value={formData.code}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Código</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: PROD001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nome
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoria
-            </label>
-            <select
+            
+            <FormField
+              control={form.control}
               name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            >
-              <option value="bebidas">Bebidas</option>
-              <option value="comidas">Comidas</option>
-              <option value="outros">Outros</option>
-            </select>
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoria</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="bebidas">Bebidas</SelectItem>
+                      <SelectItem value="comidas">Comidas</SelectItem>
+                      <SelectItem value="outros">Outros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Preço
-            </label>
-            <input
-              type="number"
-              step="0.01"
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome do Produto</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Cerveja Heineken 350ml" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
               name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preço (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantidade
-            </label>
-            <input
-              type="number"
+            <FormField
+              control={form.control}
               name="quantity"
-              value={formData.quantity}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantidade</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estoque Mínimo
-            </label>
-            <input
-              type="number"
+            <FormField
+              control={form.control}
               name="minStock"
-              value={formData.minStock}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Estoque Mínimo</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
-            >
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
-            </button>
-            <button
-              type="submit"
+            </Button>
+            <Button 
+              type="submit" 
               disabled={createProductMutation.isPending}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {createProductMutation.isPending ? "Criando..." : "Criar Produto"}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </Form>
+    </>
   );
 }

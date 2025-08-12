@@ -2,6 +2,15 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Product } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Boxes, CheckCircle, AlertTriangle, XCircle, Plus, Search, Trash2, Edit } from "lucide-react";
 import NewProductModal from "@/components/modals/NewProductModal";
 
 export default function Inventory() {
@@ -12,7 +21,7 @@ export default function Inventory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
@@ -45,13 +54,13 @@ export default function Inventory() {
     }).format(num);
   };
 
-  const getProductStatus = (product: any) => {
-    if (product.quantity === 0) return { label: 'Sem Estoque', class: 'out-of-stock' };
-    if (product.quantity <= product.minStock) return { label: 'Estoque Baixo', class: 'low-stock' };
-    return { label: 'Em Estoque', class: 'in-stock' };
+  const getProductStatus = (product: Product) => {
+    if (product.quantity === 0) return { label: 'Sem Estoque', variant: 'destructive' as const, class: 'out-of-stock' };
+    if (product.quantity <= product.minStock) return { label: 'Estoque Baixo', variant: 'outline' as const, class: 'low-stock' };
+    return { label: 'Em Estoque', variant: 'secondary' as const, class: 'in-stock' };
   };
 
-  const filteredProducts = products.filter((product: any) => {
+  const filteredProducts = products.filter((product: Product) => {
     if (searchTerm && !product.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
         !product.code.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
@@ -67,206 +76,198 @@ export default function Inventory() {
   });
 
   const totalProducts = products.length;
-  const inStock = products.filter((p: any) => p.quantity > p.minStock).length;
-  const lowStock = products.filter((p: any) => p.quantity <= p.minStock && p.quantity > 0).length;
-  const outOfStock = products.filter((p: any) => p.quantity === 0).length;
+  const inStock = products.filter((p: Product) => p.quantity > p.minStock).length;
+  const lowStock = products.filter((p: Product) => p.quantity <= p.minStock && p.quantity > 0).length;
+  const outOfStock = products.filter((p: Product) => p.quantity === 0).length;
 
   if (isLoading) {
     return (
-      <div className="p-4">
-        <div className="d-flex justify-content-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Carregando...</span>
-          </div>
-        </div>
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 fade-in">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="fw-bold" style={{ color: "#424242" }}>Estoque</h2>
-          <p className="text-muted mb-0">Controle de produtos e quantidades</p>
+          <h2 className="text-2xl font-bold text-gray-900">Estoque</h2>
+          <p className="text-gray-600">Controle de produtos e quantidades</p>
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowNewProductModal(true)}
-        >
-          <i className="fas fa-plus me-2"></i>Novo Produto
-        </button>
+        <Dialog open={showNewProductModal} onOpenChange={setShowNewProductModal}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Produto
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <NewProductModal 
+              isOpen={showNewProductModal}
+              onClose={() => setShowNewProductModal(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Inventory Stats */}
-      <div className="row mb-4">
-        <div className="col-md-3 mb-3">
-          <div className="card bg-primary text-white">
-            <div className="card-body text-center">
-              <i className="fas fa-boxes fa-2x mb-2"></i>
-              <h4 className="mb-1">{totalProducts}</h4>
-              <small>Total de Produtos</small>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3 mb-3">
-          <div className="card bg-success text-white">
-            <div className="card-body text-center">
-              <i className="fas fa-check-circle fa-2x mb-2"></i>
-              <h4 className="mb-1">{inStock}</h4>
-              <small>Em Estoque</small>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3 mb-3">
-          <div className="card bg-warning text-white">
-            <div className="card-body text-center">
-              <i className="fas fa-exclamation-triangle fa-2x mb-2"></i>
-              <h4 className="mb-1">{lowStock}</h4>
-              <small>Estoque Baixo</small>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3 mb-3">
-          <div className="card bg-danger text-white">
-            <div className="card-body text-center">
-              <i className="fas fa-times-circle fa-2x mb-2"></i>
-              <h4 className="mb-1">{outOfStock}</h4>
-              <small>Sem Estoque</small>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-blue-600 text-white border-0">
+          <CardContent className="p-6 text-center">
+            <Boxes className="w-8 h-8 mx-auto mb-2" />
+            <div className="text-2xl font-bold">{totalProducts}</div>
+            <div className="text-sm opacity-90">Total de Produtos</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-600 text-white border-0">
+          <CardContent className="p-6 text-center">
+            <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+            <div className="text-2xl font-bold">{inStock}</div>
+            <div className="text-sm opacity-90">Em Estoque</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-yellow-500 text-white border-0">
+          <CardContent className="p-6 text-center">
+            <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+            <div className="text-2xl font-bold">{lowStock}</div>
+            <div className="text-sm opacity-90">Estoque Baixo</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-red-600 text-white border-0">
+          <CardContent className="p-6 text-center">
+            <XCircle className="w-8 h-8 mx-auto mb-2" />
+            <div className="text-2xl font-bold">{outOfStock}</div>
+            <div className="text-sm opacity-90">Sem Estoque</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Inventory Filter and Search */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="row align-items-end">
-            <div className="col-md-4">
-              <label className="form-label">Buscar Produto</label>
-              <input 
-                type="text" 
-                className="form-control" 
-                placeholder="Nome ou código do produto"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+      <Card>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Buscar Produto</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input 
+                  className="pl-10"
+                  placeholder="Nome ou código do produto"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="col-md-3">
-              <label className="form-label">Categoria</label>
-              <select 
-                className="form-select"
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="">Todas as Categorias</option>
-                <option value="bebidas">Bebidas</option>
-                <option value="comidas">Comidas</option>
-                <option value="outros">Outros</option>
-              </select>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Categoria</label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as Categorias" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas as Categorias</SelectItem>
+                  <SelectItem value="bebidas">Bebidas</SelectItem>
+                  <SelectItem value="comidas">Comidas</SelectItem>
+                  <SelectItem value="outros">Outros</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="col-md-3">
-              <label className="form-label">Status</label>
-              <select 
-                className="form-select"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">Todos</option>
-                <option value="in_stock">Em Estoque</option>
-                <option value="low_stock">Estoque Baixo</option>
-                <option value="out_of_stock">Sem Estoque</option>
-              </select>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="in_stock">Em Estoque</SelectItem>
+                  <SelectItem value="low_stock">Estoque Baixo</SelectItem>
+                  <SelectItem value="out_of_stock">Sem Estoque</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="col-md-2">
-              <button 
-                className="btn btn-outline-secondary w-100"
-                onClick={() => {
-                  setSearchTerm("");
-                  setCategoryFilter("");
-                  setStatusFilter("");
-                }}
-              >
-                Limpar
-              </button>
-            </div>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                setSearchTerm("");
+                setCategoryFilter("");
+                setStatusFilter("");
+              }}
+            >
+              Limpar
+            </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Inventory Table */}
-      <div className="card">
-        <div className="card-header bg-white">
-          <h5 className="mb-0 fw-semibold">Produtos em Estoque</h5>
-        </div>
-        <div className="card-body p-0">
+      <Card>
+        <CardHeader>
+          <CardTitle>Produtos em Estoque</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
           {filteredProducts.length > 0 ? (
-            <div className="table-responsive">
-              <table className="table table-hover mb-0">
-                <thead>
-                  <tr>
-                    <th>Código</th>
-                    <th>Produto</th>
-                    <th>Categoria</th>
-                    <th>Preço</th>
-                    <th>Quantidade</th>
-                    <th>Min. Estoque</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProducts.map((product: any) => {
-                    const status = getProductStatus(product);
-                    return (
-                      <tr key={product.id}>
-                        <td className="fw-medium">{product.code}</td>
-                        <td>{product.name}</td>
-                        <td className="text-capitalize">{product.category}</td>
-                        <td>{formatCurrency(product.price)}</td>
-                        <td>{product.quantity}</td>
-                        <td>{product.minStock}</td>
-                        <td>
-                          <span className={`status-badge ${status.class}`}>
-                            {status.label}
-                          </span>
-                        </td>
-                        <td>
-                          <button className="btn btn-outline-primary btn-sm me-1" title="Editar">
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button className="btn btn-outline-success btn-sm me-1" title="Ajustar Estoque">
-                            <i className="fas fa-plus-minus"></i>
-                          </button>
-                          <button 
-                            className="btn btn-outline-danger btn-sm" 
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Preço</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                  <TableHead>Min. Estoque</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product: Product) => {
+                  const status = getProductStatus(product);
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.code}</TableCell>
+                      <TableCell>{product.name}</TableCell>
+                      <TableCell className="capitalize">{product.category}</TableCell>
+                      <TableCell>{formatCurrency(product.price)}</TableCell>
+                      <TableCell>{product.quantity}</TableCell>
+                      <TableCell>{product.minStock}</TableCell>
+                      <TableCell>
+                        <Badge variant={status.variant}>
+                          {status.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          <Button size="sm" variant="outline" title="Editar">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
                             title="Excluir"
                             onClick={() => deleteProductMutation.mutate(product.id)}
                             disabled={deleteProductMutation.isPending}
                           >
-                            <i className="fas fa-trash"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           ) : (
-            <div className="text-center py-5">
-              <i className="fas fa-boxes fa-3x text-muted mb-3"></i>
-              <h5 className="text-muted">Nenhum produto encontrado</h5>
-              <p className="text-muted">Clique em "Novo Produto" para adicionar seu primeiro produto</p>
+            <div className="text-center py-12">
+              <Boxes className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+              <h5 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto encontrado</h5>
+              <p className="text-gray-600">Clique em "Novo Produto" para adicionar seu primeiro produto</p>
             </div>
           )}
-        </div>
-      </div>
-
-      <NewProductModal 
-        show={showNewProductModal}
-        onHide={() => setShowNewProductModal(false)}
-      />
+        </CardContent>
+      </Card>
     </div>
   );
 }
