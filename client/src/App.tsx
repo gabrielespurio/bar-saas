@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
-import CompanyDashboard from "@/pages/company-dashboard";
+
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -38,18 +38,9 @@ function Router() {
         </>
       ) : (
         <>
-          {company?.userType === 'system_admin' ? (
-            <>
-              <Route path="/" component={Dashboard} />
-              <Route path="/dashboard" component={Dashboard} />
-              <Route path="/dashboard/:module" component={Dashboard} />
-            </>
-          ) : (
-            <>
-              <Route path="/" component={CompanyDashboard} />
-              <Route path="/company-dashboard" component={CompanyDashboard} />
-            </>
-          )}
+          <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/dashboard/:module" component={Dashboard} />
         </>
       )}
       <Route component={NotFound} />
