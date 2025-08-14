@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
+import { apiRequest } from "@/lib/queryClient";
 import { MoreVertical, Edit, Power, PowerOff, Users } from "lucide-react";
 
 const createCompanySchema = z.object({
@@ -180,27 +180,14 @@ export default function SystemCompanies() {
     }
   };
 
-  const { data: companies = [], isLoading, error } = useQuery({
-    queryKey: ['system/companies'],
-    queryFn: async () => {
-      try {
-        console.log('Fetching companies...');
-        const response = await api.get('/system/companies');
-        console.log('Companies API response:', response.data);
-        const companiesData = Array.isArray(response.data) ? response.data : [];
-        console.log('Processed companies data:', companiesData);
-        return companiesData;
-      } catch (error) {
-        console.error('Error fetching companies:', error);
-        throw error;
-      }
-    },
+  const { data: companies = [], isLoading, error } = useQuery<Company[]>({
+    queryKey: ['/api/system/companies'],
   });
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: CreateCompanyData) => {
-      const response = await api.post('/system/companies', data);
-      return response.data;
+      const response = await apiRequest('POST', '/api/system/companies', data);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system/companies'] });
@@ -222,8 +209,8 @@ export default function SystemCompanies() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const response = await api.patch(`/system/companies/${id}/status`, { active });
-      return response.data;
+      const response = await apiRequest('PATCH', `/api/system/companies/${id}/status`, { active });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system/companies'] });
@@ -246,8 +233,8 @@ export default function SystemCompanies() {
     queryKey: ['company-users', selectedCompany?.id],
     queryFn: async () => {
       if (!selectedCompany) return [];
-      const response = await api.get(`/system/companies/${selectedCompany.id}/users`);
-      return response.data;
+      const response = await apiRequest('GET', `/api/system/companies/${selectedCompany.id}/users`);
+      return await response.json();
     },
     enabled: !!selectedCompany && isUsersModalOpen,
   });
@@ -256,8 +243,8 @@ export default function SystemCompanies() {
   const createUserMutation = useMutation({
     mutationFn: async (data: CreateUserData) => {
       if (!selectedCompany) throw new Error('Empresa não selecionada');
-      const response = await api.post(`/system/companies/${selectedCompany.id}/users`, data);
-      return response.data;
+      const response = await apiRequest('POST', `/api/system/companies/${selectedCompany.id}/users`, data);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-users', selectedCompany?.id] });
@@ -281,8 +268,8 @@ export default function SystemCompanies() {
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
       if (!selectedCompany) throw new Error('Empresa não selecionada');
-      const response = await api.patch(`/system/companies/${selectedCompany.id}/users/${userId}/status`, { active });
-      return response.data;
+      const response = await apiRequest('PATCH', `/api/system/companies/${selectedCompany.id}/users/${userId}/status`, { active });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-users', selectedCompany?.id] });
